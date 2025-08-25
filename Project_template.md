@@ -63,115 +63,41 @@ curl http://localhost:8000/api/movies
  - реализовать CI/CD для сборки прокси сервиса
  - реализовать необходимые конфигурационные файлы для переключения трафика.
 
-
 ### CI/CD
 
- В папке .github/worflows доработайте деплой новых сервисов proxy и events в docker-build-push.yml , чтобы api-tests при сборке отрабатывали корректно при отправке коммита в ваш репозиторий.
+В папке .github/worflows доработан деплой новых сервисов proxy и events в docker-build-push.yml, чтобы api-tests при сборке отрабатывали корректно при отправке коммита в ваш репозиторий.
 
-Нужно доработать 
-```yaml
-on:
-  push:
-    branches: [ main ]
-    paths:
-      - 'src/**'
-      - '.github/workflows/docker-build-push.yml'
-  release:
-    types: [published]
-```
-и добавить необходимые шаги в блок
-```yaml
-jobs:
-  build-and-push:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      packages: write
+["зеленая" сборка и "зеленые" тесты.](./schemas/3_ci_1.png)
 
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v2
-
-      - name: Log in to the Container registry
-        uses: docker/login-action@v2
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-```
-Как только сборка отработает и в github registry появятся ваши образы, можно переходить к блоку настройки Kubernetes
-Успешным результатом данного шага является "зеленая" сборка и "зеленые" тесты
+[образы в github registry.](./schemas/3_ci_2.png)
 
 
 ### Proxy в Kubernetes
 
 #### Шаг 1
+
 Для деплоя в kubernetes необходимо залогиниться в docker registry Github'а.
-1. Создайте Personal Access Token (PAT) https://github.com/settings/tokens . Создавайте class с правом read:packages
-2. В src/kubernetes/*.yaml (event-service, monolith, movies-service и proxy-service)  отредактируйте путь до ваших образов 
-```bash
- spec:
-      containers:
-      - name: events-service
-        image: ghcr.io/ваш логин/имя репозитория/events-service:latest
-```
-3. Добавьте в секрет src/kubernetes/dockerconfigsecret.yaml в поле
-```bash
- .dockerconfigjson: значение в base64 файла ~/.docker/config.json
-```
 
-4. Если в ~/.docker/config.json нет значения для аутентификации
-```json
-{
-        "auths": {
-                "ghcr.io": {
-                       тут пусто
-                }
-        }
-}
-```
-то выполните 
+1. Создан Personal Access Token (PAT) https://github.com/settings/tokens с правом read:packages
+   
+2. В src/kubernetes/*.yaml (event-service, monolith, movies-service и proxy-service) отредактирован путь до образов 
 
-и добавьте
-
-```json 
- "auth": "имя пользователя:токен в base64"
-```
-
-Чтобы получить значение в base64 можно выполнить команду
-```bash
- echo -n ваш_логин:ваш_токен | base64
-```
-
-После заполнения config.json, также прогоните содержимое через base64
-
-```bash
-cat .docker/config.json | base64
-```
-
-и полученное значение добавляем в
-
-```bash
- .dockerconfigjson: значение в base64 файла ~/.docker/config.json
-```
+3. Добавлен секрет в src/kubernetes/dockerconfigsecret.yaml 
+ 
 
 #### Шаг 2
 
-  Доработайте src/kubernetes/event-service.yaml и src/kubernetes/proxy-service.yaml
+Доработаны src/kubernetes/event-service.yaml и src/kubernetes/proxy-service.yaml (созданы Deployment и Service).
 
-  - Необходимо создать Deployment и Service 
-  - Доработайте ingress.yaml, чтобы можно было с помощью тестов проверить создание событий
-  - Выполните дальшейшие шаги для поднятия кластера:
+Доработан ingress.yaml, чтобы можно было с помощью тестов проверить создание событий
 
-  1. Создайте namespace:
+Выполнены шаги для поднятия кластера:
+
+  1. Создан namespace:
   ```bash
   kubectl apply -f src/kubernetes/namespace.yaml
   ```
-  2. Создайте секреты и переменные
+  2. Созданы секреты и переменные
   ```bash
   kubectl apply -f src/kubernetes/configmap.yaml
   kubectl apply -f src/kubernetes/secret.yaml
@@ -179,68 +105,58 @@ cat .docker/config.json | base64
   kubectl apply -f src/kubernetes/postgres-init-configmap.yaml
   ```
 
-  3. Разверните базу данных:
+  3. Развернута база данных:
   ```bash
   kubectl apply -f src/kubernetes/postgres.yaml
   ```
 
-  На этом этапе если вызвать команду
-  ```bash
-  kubectl -n cinemaabyss get pod
-  ```
-  Вы увидите
-
-  NAME         READY   STATUS    
-  postgres-0   1/1     Running   
-
-  4. Разверните Kafka:
+  4. Развернута Kafka:
   ```bash
   kubectl apply -f src/kubernetes/kafka/kafka.yaml
   ```
 
-  Проверьте, теперь должно быть запущено 3 пода, если что-то не так, то посмотрите логи
-  ```bash
-  kubectl -n cinemaabyss logs имя_пода (например - kafka-0)
-  ```
+[экранная форма с результатами развертывания.](./schemas/3_kub_1.png)
 
-  5. Разверните монолит:
+Проверим, что теперь запущено 3 пода:
+
+[экранная форма с проверкой подов.](./schemas/3_kub_2.png)
+
+  5. Развернут монолит:
   ```bash
   kubectl apply -f src/kubernetes/monolith.yaml
   ```
-  6. Разверните микросервисы:
+  6. Развернуты микросервисы:
   ```bash
   kubectl apply -f src/kubernetes/movies-service.yaml
   kubectl apply -f src/kubernetes/events-service.yaml
   ```
-  7. Разверните прокси-сервис:
+  7. Развернут прокси-сервис:
   ```bash
   kubectl apply -f src/kubernetes/proxy-service.yaml
   ```
+
+[экранная форма с результатами развертывания.](./schemas/3_kub_3.png)
 
   После запуска и поднятия подов вывод команды 
   ```bash
   kubectl -n cinemaabyss get pod
   ```
-
   Будет наподобие такого
-
 ```bash
   NAME                              READY   STATUS    
-
   events-service-7587c6dfd5-6whzx   1/1     Running  
-
   kafka-0                           1/1     Running   
-
   monolith-8476598495-wmtmw         1/1     Running  
-
   movies-service-6d5697c584-4qfqs   1/1     Running  
-
   postgres-0                        1/1     Running  
-
   proxy-service-577d6c549b-6qfcv    1/1     Running  
-
   zookeeper-0                       1/1     Running 
 ```
+
+Получен ожидаемый результат:
+
+[экранная форма с проверкой подов.](./schemas/3_kub_3.png)
+
 
   8. Добавим ingress
 

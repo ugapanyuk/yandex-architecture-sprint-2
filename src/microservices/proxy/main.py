@@ -48,6 +48,9 @@ async def health_check():
     """Эндпоинт для проверки работоспособности прокси-сервиса."""
     return Response(content="Strangler Fig Proxy is healthy", status_code=200)
 
+@app.get("/api/proxy/health")
+async def health_check2():
+    return {"status": True}
 
 @app.api_route("/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"])
 async def proxy_request(request: Request, path: str):
