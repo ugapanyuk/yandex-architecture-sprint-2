@@ -4,24 +4,26 @@ metadata:
   name: cinemaabyss-ingress
   namespace: cinemaabyss
   annotations:
-    kubernetes.io/ingress.class: "nginx"
-    nginx.ingress.kubernetes.io/ssl-redirect: "false"
 spec:
+  ingressClassName: nginx
   rules:
     - host: cinemaabyss.example.com
       http:
         paths:
-          - path: /api/events(/|$)(.*)
-            pathType: ImplementationSpecific 
+          # Путь для events-service.
+          - path: /api/events
+            pathType: Prefix 
             backend:
               service:
                 name: events-service
                 port:
                   number: 8082
-          - path: /()(.*)
-            pathType: ImplementationSpecific 
+          # Путь для всего остального (прокси).
+          - path: /
+            pathType: Prefix 
             backend:
               service:
                 name: proxy-service 
                 port:
-                  number: 8000 
+                  number: 8000
+

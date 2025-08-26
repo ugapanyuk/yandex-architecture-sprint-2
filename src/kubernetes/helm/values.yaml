@@ -5,7 +5,7 @@ global:
 
 # Image pull secrets
 imagePullSecrets:
-  dockerconfigjson: ewoJImF1dGhzIjogewoJCSJnaGNyLmlvIjogewoJCQkiYXV0aCI6
+  dockerconfigjson: eyJhdXRocyI6eyJnaGNyLmlvIjp7InVzZXJuYW1lIjoidWdhcGFueXVrIiwicGFzc3dvcmQiOiJnaHBfNXBzMDVKTkx0MnM2dFlMb3RyVEY0YW9WYXhydFU0MjNHakFqIiwiYXV0aCI6ImRXZGhjR0Z1ZVhWck9tZG9jRjgxY0hNd05VcE9USFF5Y3paMFdVeHZkSEpVUmpSaGIxWmhlSEowVlRReU0wZHFRV289In19fQ==
 # Database configuration
 database:
   host: postgres
@@ -33,7 +33,7 @@ database:
 monolith:
   enabled: true
   image:
-    repository: ghcr.io/db-exp/cinemaabysstest/monolith
+    repository: ghcr.io/ugapanyuk/yandex-architecture-sprint-2/monolith
     tag: latest
     pullPolicy: Always
   replicas: 1
@@ -53,7 +53,7 @@ monolith:
 proxyService:
   enabled: true
   image:
-    repository: ghcr.io/db-exp/cinemaabysstest/proxy-service
+    repository: ghcr.io/ugapanyuk/yandex-architecture-sprint-2/proxy-service
     tag: latest
     pullPolicy: Always
   replicas: 1
@@ -73,7 +73,7 @@ proxyService:
 moviesService:
   enabled: true
   image:
-    repository: ghcr.io/db-exp/cinemaabysstest/movies-service
+    repository: ghcr.io/ugapanyuk/yandex-architecture-sprint-2/movies-service
     tag: latest
     pullPolicy: Always
   replicas: 1
@@ -93,7 +93,7 @@ moviesService:
 eventsService:
   enabled: true
   image:
-    repository: ghcr.io/db-exp/cinemaabysstest/events-service
+    repository: ghcr.io/ugapanyuk/yandex-architecture-sprint-2/events-service
     tag: latest
     pullPolicy: Always
   replicas: 1
@@ -183,3 +183,5 @@ config:
   # Strangler Fig configuration
   gradualMigration: "true"
   moviesMigrationPercent: "100"
+  kafkabroker: "kafka:9092"
+

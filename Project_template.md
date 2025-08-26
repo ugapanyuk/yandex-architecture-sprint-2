@@ -155,19 +155,19 @@ curl http://localhost:8000/api/movies
 
 Получен ожидаемый результат:
 
-[экранная форма с проверкой подов.](./schemas/3_kub_3.png)
+[экранная форма с проверкой подов.](./schemas/3_kub_4.png)
 
 
   8. Добавим ingress
 
-  - добавьте аддон
+  - добавлен аддон
   ```bash
   minikube addons enable ingress
   ```
   ```bash
   kubectl apply -f src/kubernetes/ingress.yaml
   ```
-  9. Добавьте в /etc/hosts
+  9. Добавлено в /etc/hosts
   127.0.0.1 cinemaabyss.example.com
 
   10. Вызовите
@@ -185,58 +185,25 @@ curl http://localhost:8000/api/movies
   Часть тестов с health-чек упадет, но создание событий отработает.
   Откройте логи event-service и сделайте скриншот обработки событий
 
+[Результаты вызова тестов (фрагмент консольного вывода).](./schemas/3_kub_5.png)
+
 #### Шаг 3
-Добавьте сюда скриншота вывода при вызове https://cinemaabyss.example.com/api/movies и  скриншот вывода event-service после вызова тестов.
+[скриншот вывода при вызове https://cinemaabyss.example.com/api/movies.](./schemas/3_kub_6.png)  
+
+[скриншот вывода event-service после вызова тестов.](./schemas/3_kub_7.png)
+
+На скриншоте показано, что event-service в процессе выполнения тестов успешно взаимодействует с Kafka.
 
 
 # Задание 4
 Для простоты дальнейшего обновления и развертывания вам как архитектуру необходимо так же реализовать helm-чарты для прокси-сервиса и проверить работу 
 
 Для этого:
-1. Перейдите в директорию helm и отредактируйте файл values.yaml
+1. Перейдите в директорию helm и отредактируйте файл values.yaml - выполнено
 
-```yaml
-# Proxy service configuration
-proxyService:
-  enabled: true
-  image:
-    repository: ghcr.io/db-exp/cinemaabysstest/proxy-service
-    tag: latest
-    pullPolicy: Always
-  replicas: 1
-  resources:
-    limits:
-      cpu: 300m
-      memory: 256Mi
-    requests:
-      cpu: 100m
-      memory: 128Mi
-  service:
-    port: 80
-    targetPort: 8000
-    type: ClusterIP
-```
+2. В папке ./templates/services заполните шаблоны для proxy-service.yaml и events-service.yaml (опирайтесь на свою kubernetes конфигурацию - смысл helm'а сделать шаблоны для быстрого обновления и установки) - выполнено
 
-- Вместо ghcr.io/db-exp/cinemaabysstest/proxy-service напишите свой путь до образа для всех сервисов
-- для imagePullSecret проставьте свое значение (скопируйте из конфигурации kubernetes)
-  ```yaml
-  imagePullSecrets:
-      dockerconfigjson: ewoJImF1dGhzIjogewoJCSJnaGNyLmlvIjogewoJCQkiYXV0aCI6ICJaR0l0Wlhod09tZG9jRjl2UTJocVZIa3dhMWhKVDIxWmFVZHJOV2hRUW10aFVXbFZSbTVaTjJRMFNYUjRZMWM9IgoJCX0KCX0sCgkiY3JlZHNTdG9yZSI6ICJkZXNrdG9wIiwKCSJjdXJyZW50Q29udGV4dCI6ICJkZXNrdG9wLWxpbnV4IiwKCSJwbHVnaW5zIjogewoJCSIteC1jbGktaGludHMiOiB7CgkJCSJlbmFibGVkIjogInRydWUiCgkJfQoJfSwKCSJmZWF0dXJlcyI6IHsKCQkiaG9va3MiOiAidHJ1ZSIKCX0KfQ==
-  ```
-
-2. В папке ./templates/services заполните шаблоны для proxy-service.yaml и events-service.yaml (опирайтесь на свою kubernetes конфигурацию - смысл helm'а сделать шаблоны для быстрого обновления и установки)
-
-```yaml
-template:
-    metadata:
-      labels:
-        app: proxy-service
-    spec:
-      containers:
-       Тут ваша конфигурация
-```
-
-3. Проверьте установку
+3. Проверьте установку - выполнено
 Сначала удалим установку руками
 
 ```bash
@@ -245,12 +212,7 @@ kubectl delete  namespace cinemaabyss
 ```
 Запустите 
 ```bash
-helm install cinemaabyss .\src\kubernetes\helm --namespace cinemaabyss --create-namespace
-```
-Если в процессе будет ошибка
-```code
-[2025-04-08 21:43:38,780] ERROR Fatal error during KafkaServer startup. Prepare to shutdown (kafka.server.KafkaServer)
-kafka.common.InconsistentClusterIdException: The Cluster ID OkOjGPrdRimp8nkFohYkCw doesn't match stored clusterId Some(sbkcoiSiQV2h_mQpwy05zQ) in meta.properties. The broker is trying to join the wrong cluster. Configured zookeeper.connect may be wrong.
+helm install cinemaabyss ./src/kubernetes/helm --namespace cinemaabyss --create-namespace
 ```
 
 Проверьте развертывание:
@@ -263,9 +225,15 @@ minikube tunnel
 https://cinemaabyss.example.com/api/movies
 и приложите скриншот развертывания helm и вывода https://cinemaabyss.example.com/api/movies
 
-## Удаляем все
+#### Удаляем все
 
 ```bash
 kubectl delete all --all -n cinemaabyss
 kubectl delete namespace cinemaabyss
 ```
+
+## Успешные результаты выполнения задания 4
+
+[скриншот успешного развертывания helm](./schemas/3_kub_8.png)
+
+[скриншот вывода при вызове https://cinemaabyss.example.com/api/movies.](./schemas/3_kub_9.png)
