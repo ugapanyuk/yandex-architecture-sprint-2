@@ -1,0 +1,29 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: cinemaabyss-ingress
+  namespace: cinemaabyss
+  annotations:
+spec:
+  ingressClassName: nginx
+  rules:
+    - host: cinemaabyss.example.com
+      http:
+        paths:
+          # Путь для events-service.
+          - path: /api/events
+            pathType: Prefix 
+            backend:
+              service:
+                name: events-service
+                port:
+                  number: 8082
+          # Путь для всего остального (прокси).
+          - path: /
+            pathType: Prefix 
+            backend:
+              service:
+                name: proxy-service 
+                port:
+                  number: 8000
+

@@ -1,0 +1,57 @@
+@startuml
+!include <C4/C4_Container>
+
+'Внешние акторы и системы
+Person(user, "Пользователь", "может использовать различные устройства")
+System_Ext(payment_system, "Внешняя платежная система")
+System_Ext(recommendation_system, "Внешняя рекомендательная система")
+System_Ext(s3_storage, "Объектное хранилище S3", "для видеофайлов и другого контента")
+
+'Граница основной системы
+System_Boundary(kinobezdna_system, "Онлайн-кинотеатр «Кинобездна»") {
+    
+    'Клиентские приложения
+    Container(spa, "Клиентские приложения", "", "Веб, мобильные, SmartTV приложения")
+    
+    'Единая точка входа
+    Container(api_gateway, "API Gateway", "", "Единая точка входа, маршрутизация запросов, аутентификация, ограничение скорости")
+
+    'Микросервисы
+    Container(user_service, "Микросервис пользователей", "", "Управление пользователями, аутентификация, профили, избранное")
+    Container(payment_service, "Микросервис платежей", "", "Управление платежами")
+    Container(metadata_service, "Микросервис метаданных", "", "Предоставление информации о фильмах, жанрах, актерах, оценках")
+    Container(monolith, "Монолит", "", "Оставшаяся функциональность, которая будет постепенно выделяться в микросервисы")
+
+    'Базы данных
+    ContainerDb(user_db, "БД Пользователей")
+    ContainerDb(payment_db, "БД Платежей")
+    ContainerDb(metadata_db, "Метаданные")
+    ContainerDb(monolith_db, "БД монолита")
+
+    'Брокер сообщений
+    Container(kafka, "Брокер сообщений", "Apache Kafka", "Обеспечивает асинхронное взаимодействие между сервисами")
+}
+
+'Связи
+
+'Синхронные потоки
+Rel(user, spa, "Использует")
+Rel(spa, api_gateway, "Делает запросы к API")
+Rel(api_gateway, user_service, "Маршрутизация запросов аутентификации и авторизации")
+Rel(api_gateway, payment_service, "Маршрутизация запросов, связанных с платежами")
+Rel(api_gateway, metadata_service, "Маршрутизация запросов к метаданным")
+Rel(api_gateway, monolith, "Маршрутизация запросов к устаревшей функциональности системы")
+Rel(user_service, user_db, "Взаимодействие с БД")
+Rel(payment_service, payment_db, "Взаимодействие с БД")
+Rel(metadata_service, metadata_db, "Взаимодействие с БД")
+Rel(monolith, monolith_db, "Взаимодействие с БД")
+Rel(payment_service, payment_system, "Выполнение платежей")
+Rel(monolith, s3_storage, "Выполнение чтения и записи больших файлов")
+
+'Асинхронные
+Rel(payment_service, kafka, "Публикация событий", "Kafka")
+Rel(metadata_service, kafka, "Публикация событий", "Kafka")
+Rel(kafka, user_service, "Обработка событий, связанных с пользователями", "Kafka")
+Rel(kafka, recommendation_system, "Обработка событий, связанных с рекомендациями", "Kafka")
+
+@enduml
